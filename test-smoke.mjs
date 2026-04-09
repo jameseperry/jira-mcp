@@ -6,11 +6,11 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 
-const required = ["JIRA_HOST", "JIRA_EMAIL", "JIRA_API_TOKEN"];
+const required = ["JIRA_BASE_URL", "JIRA_EMAIL", "JIRA_API_TOKEN"];
 const missing = required.filter((k) => !process.env[k]);
 if (missing.length) {
   console.error(`Missing env vars: ${missing.join(", ")}`);
-  console.error("Usage: JIRA_HOST=... JIRA_EMAIL=... JIRA_API_TOKEN=... node test-smoke.mjs");
+  console.error("Usage: JIRA_BASE_URL=... JIRA_EMAIL=... JIRA_API_TOKEN=... node test-smoke.mjs");
   process.exit(1);
 }
 
@@ -18,7 +18,7 @@ const transport = new StdioClientTransport({
   command: "node",
   args: ["dist/index.js"],
   env: {
-    JIRA_HOST: process.env.JIRA_HOST,
+    JIRA_BASE_URL: process.env.JIRA_BASE_URL,
     JIRA_EMAIL: process.env.JIRA_EMAIL,
     JIRA_API_TOKEN: process.env.JIRA_API_TOKEN,
   },

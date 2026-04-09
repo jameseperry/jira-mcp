@@ -3,17 +3,17 @@ export class JiraClient {
   private authHeader: string;
 
   constructor() {
-    const host = process.env.JIRA_HOST;
+    const baseUrl = process.env.JIRA_BASE_URL;
     const email = process.env.JIRA_EMAIL;
     const apiToken = process.env.JIRA_API_TOKEN;
 
-    if (!host || !email || !apiToken) {
+    if (!baseUrl || !email || !apiToken) {
       throw new Error(
-        "Missing required environment variables: JIRA_HOST, JIRA_EMAIL, JIRA_API_TOKEN"
+        "Missing required environment variables: JIRA_BASE_URL, JIRA_EMAIL, JIRA_API_TOKEN"
       );
     }
 
-    this.baseUrl = `https://${host}/rest`;
+    this.baseUrl = `${baseUrl.replace(/\/$/, "")}/rest`;
     this.authHeader = `Basic ${Buffer.from(`${email}:${apiToken}`).toString("base64")}`;
   }
 
