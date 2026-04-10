@@ -14,9 +14,8 @@ export function registerSearchTools(server: McpServer, client: JiraClient) {
         .array(z.string())
         .optional()
         .describe("Fields to include (default: summary, status, assignee, issuetype, priority)"),
-      nextPageToken: z.string().optional().describe("Token for fetching the next page of results"),
     },
-    async ({ jql, maxResults, fields, nextPageToken }) => {
+    async ({ jql, maxResults, fields }) => {
       const body: any = {
         jql,
         maxResults: Math.min(maxResults || 20, 100),
@@ -24,21 +23,18 @@ export function registerSearchTools(server: McpServer, client: JiraClient) {
           ? fields
           : ["summary", "status", "assignee", "issuetype", "priority"],
       };
-      if (nextPageToken) body.nextPageToken = nextPageToken;
 
       const data = await client.post("/search/jql", body);
       const issues = (data.issues || []).map(formatIssueSummary);
-      const parts: string[] = [];
-      if (issues.length) {
-        parts.push(`Found ${issues.length} issue(s):\n${issues.join("\n")}`);
-      } else {
-        parts.push("No issues found.");
-      }
-      if (data.nextPageToken) {
-        parts.push(`\nMore results available — nextPageToken: ${data.nextPageToken}`);
-      }
       return {
-        content: [{ type: "text", text: parts.join("\n") }],
+        content: [
+          {
+            type: "text",
+            text: issues.length
+              ? `Found ${issues.length} issue(s):\n${issues.join("\n")}`
+              : "No issues found.",
+          },
+        ],
       };
     }
   );
