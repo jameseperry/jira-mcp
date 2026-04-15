@@ -14,14 +14,15 @@ if (missing.length) {
   process.exit(1);
 }
 
+// Pass through all JIRA_* env vars (includes JIRA_BASE_URL_* for extra instances)
+const jiraEnv = Object.fromEntries(
+  Object.entries(process.env).filter(([k]) => k.startsWith("JIRA_"))
+);
+
 const transport = new StdioClientTransport({
   command: "node",
   args: ["dist/index.js"],
-  env: {
-    JIRA_BASE_URL: process.env.JIRA_BASE_URL,
-    JIRA_EMAIL: process.env.JIRA_EMAIL,
-    JIRA_API_TOKEN: process.env.JIRA_API_TOKEN,
-  },
+  env: jiraEnv,
 });
 
 const client = new Client({ name: "test-smoke", version: "0.1.0" });

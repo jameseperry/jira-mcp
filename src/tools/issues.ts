@@ -8,10 +8,11 @@ export function registerIssueTools(server: McpServer, client: JiraClient) {
     "jira_get_issue",
     "Get detailed information about a specific Jira issue",
     {
+      instance: z.string().optional().describe("Jira instance name (omit for default)"),
       issueKey: z.string().describe("Issue key (e.g. PROJ-123)"),
     },
-    async ({ issueKey }) => {
-      const issue = await client.get(`/issue/${encodeURIComponent(issueKey)}`);
+    async ({ instance, issueKey }) => {
+      const issue = await client.for(instance).get(`/issue/${encodeURIComponent(issueKey)}`);
       return {
         content: [{ type: "text", text: formatIssue(issue) }],
       };
@@ -22,6 +23,7 @@ export function registerIssueTools(server: McpServer, client: JiraClient) {
     "jira_create_issue",
     "Create a new Jira issue",
     {
+      instance: z.string().optional().describe("Jira instance name (omit for default)"),
       projectKey: z.string().describe("Project key (e.g. PROJ)"),
       issueType: z.string().describe("Issue type (e.g. Task, Bug, Story, Epic)"),
       summary: z.string().describe("Issue summary/title"),
@@ -31,7 +33,8 @@ export function registerIssueTools(server: McpServer, client: JiraClient) {
       labels: z.array(z.string()).optional().describe("Labels to apply"),
       parentKey: z.string().optional().describe("Parent issue key (for subtasks or child issues)"),
     },
-    async ({ projectKey, issueType, summary, description, assigneeId, priority, labels, parentKey }) => {
+    async ({ instance, projectKey, issueType, summary, description, assigneeId, priority, labels, parentKey }) => {
+      const jira = client.for(instance);
       const fields: any = {
         project: { key: projectKey },
         issuetype: { name: issueType },
@@ -43,7 +46,7 @@ export function registerIssueTools(server: McpServer, client: JiraClient) {
       if (labels) fields.labels = labels;
       if (parentKey) fields.parent = { key: parentKey };
 
-      const result = await client.post("/issue", { fields });
+      const result = await jira.post("/issue", { fields });
       return {
         content: [
           {
@@ -59,6 +62,7 @@ export function registerIssueTools(server: McpServer, client: JiraClient) {
     "jira_update_issue",
     "Update fields on an existing Jira issue",
     {
+      instance: z.string().optional().describe("Jira instance name (omit for default)"),
       issueKey: z.string().describe("Issue key (e.g. PROJ-123)"),
       summary: z.string().optional().describe("New summary"),
       description: z.string().optional().describe("New description (plain text)"),
@@ -66,7 +70,8 @@ export function registerIssueTools(server: McpServer, client: JiraClient) {
       priority: z.string().optional().describe("Priority name"),
       labels: z.array(z.string()).optional().describe("Labels (replaces existing)"),
     },
-    async ({ issueKey, summary, description, assigneeId, priority, labels }) => {
+    async ({ instance, issueKey, summary, description, assigneeId, priority, labels }) => {
+      const jira = client.for(instance);
       const fields: any = {};
       if (summary) fields.summary = summary;
       if (description) fields.description = textToAdf(description);
@@ -78,7 +83,7 @@ export function registerIssueTools(server: McpServer, client: JiraClient) {
       if (priority) fields.priority = { name: priority };
       if (labels) fields.labels = labels;
 
-      await client.put(`/issue/${encodeURIComponent(issueKey)}`, { fields });
+      await jira.put(`/issue/${encodeURIComponent(issueKey)}`, { fields });
       return {
         content: [{ type: "text", text: `Updated ${issueKey}` }],
       };
@@ -89,13 +94,14 @@ export function registerIssueTools(server: McpServer, client: JiraClient) {
     "jira_assign_issue",
     "Assign a Jira issue to a user",
     {
+      instance: z.string().optional().describe("Jira instance name (omit for default)"),
       issueKey: z.string().describe("Issue key (e.g. PROJ-123)"),
       accountId: z
         .string()
         .describe("Atlassian account ID of the assignee, or 'none' to unassign"),
     },
-    async ({ issueKey, accountId }) => {
-      await client.put(`/issue/${encodeURIComponent(issueKey)}/assignee`, {
+    async ({ instance, issueKey, accountId }) => {
+      await client.for(instance).put(`/issue/${encodeURIComponent(issueKey)}/assignee`, {
         accountId: accountId === "none" ? null : accountId,
       });
       const action = accountId === "none" ? "Unassigned" : `Assigned to ${accountId}`;

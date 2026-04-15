@@ -7,10 +7,11 @@ export function registerTransitionTools(server: McpServer, client: JiraClient) {
     "jira_get_transitions",
     "Get available status transitions for an issue",
     {
+      instance: z.string().optional().describe("Jira instance name (omit for default)"),
       issueKey: z.string().describe("Issue key (e.g. PROJ-123)"),
     },
-    async ({ issueKey }) => {
-      const data = await client.get(
+    async ({ instance, issueKey }) => {
+      const data = await client.for(instance).get(
         `/issue/${encodeURIComponent(issueKey)}/transitions`
       );
       const transitions = (data.transitions || []).map(
@@ -33,6 +34,7 @@ export function registerTransitionTools(server: McpServer, client: JiraClient) {
     "jira_transition_issue",
     "Transition a Jira issue to a new status",
     {
+      instance: z.string().optional().describe("Jira instance name (omit for default)"),
       issueKey: z.string().describe("Issue key (e.g. PROJ-123)"),
       transitionId: z
         .string()
@@ -42,7 +44,7 @@ export function registerTransitionTools(server: McpServer, client: JiraClient) {
         .optional()
         .describe("Optional comment to add with the transition"),
     },
-    async ({ issueKey, transitionId, comment }) => {
+    async ({ instance, issueKey, transitionId, comment }) => {
       const body: any = {
         transition: { id: transitionId },
       };
@@ -66,7 +68,7 @@ export function registerTransitionTools(server: McpServer, client: JiraClient) {
           ],
         };
       }
-      await client.post(
+      await client.for(instance).post(
         `/issue/${encodeURIComponent(issueKey)}/transitions`,
         body
       );
