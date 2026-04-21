@@ -137,7 +137,3 @@ jira-mcp/
 
 - Python 3.10+
 - Jira Cloud (not self-hosted Jira Server/Data Center)
-
-## License
-
-MIT
