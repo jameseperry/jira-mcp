@@ -1,86 +1,57 @@
-# JIRA MCP Server
+# jira-mcp
 
-A Model Context Protocol (MCP) server that provides AI assistants with seamless access to Jira Cloud. This enables AI tools like Claude to read, create, update, and manage Jira issues, sprints, comments, and more.
+A [Model Context Protocol](https://modelcontextprotocol.io/) server for Jira Cloud built with [FastMCP](https://github.com/jlowin/fastmcp). Gives AI assistants (Claude Code, etc.) full read/write access to Jira issues, sprints, boards, and more.
 
 ## Features
 
-### Issue Management
-- **Search issues** using JQL (Jira Query Language)
-- **Get detailed issue information** including status, assignee, description, and custom fields
-- **Create new issues** with support for tasks, bugs, stories, epics, and subtasks
-- **Update existing issues** including summary, description, assignee, priority, and labels
-- **Assign/unassign issues** to team members
-
-### Comments
-- **Add comments** to issues with plain text (automatically converted to Atlassian Document Format)
-
-### Workflows
-- **View available transitions** for any issue
-- **Transition issues** through your workflow (e.g., move from "To Do" to "In Progress")
-- **Add comments** during transitions
-
-### Sprint & Agile
-- **List agile boards** (Scrum and Kanban)
-- **View sprints** with filtering by state (active, closed, future)
-- **Create new sprints** with start/end dates and goals
-- **View sprint issues**
-- **Move issues to sprints**
-
-### Issue Links
-- **Get link types** (Blocks, Duplicate, Relates, etc.)
-- **Link issues** together with relationship types
-
-### Project Management
-- **List all accessible projects** with key, name, and type information
-
-### Multiple Jira Instances
-- **Work across multiple Atlassian Cloud sites** with named instance support
-- All tools accept an optional `instance` parameter to target non-default sites
-
-## Prerequisites
-
-- **Node.js** 18 or higher
-- **Jira Cloud instance** (not self-hosted Jira)
-- **Jira API token** from [Atlassian API Tokens](https://id.atlassian.com/manage-profile/security/api-tokens)
+- **Issue management** — search (JQL), get, create, update, assign
+- **Comments** — add comments (plain text, auto-converted to ADF)
+- **Workflows** — view transitions, move issues through statuses
+- **Sprints & boards** — list boards, manage sprints, move issues
+- **Issue links** — view link types, create links between issues
+- **Projects** — list accessible projects
+- **Multi-instance** — work across multiple Jira Cloud sites via named instances
+- **Structured output** — all tools return JSON, not formatted text
 
 ## Installation
 
-1. Clone or download this repository:
+### pipx (recommended)
+
 ```bash
-git clone <repository-url>
+pipx install git+https://github.com/jameseperry/jira-mcp.git
+```
+
+This installs `jira-mcp` as a standalone command.
+
+### pip
+
+```bash
+pip install git+https://github.com/jameseperry/jira-mcp.git
+```
+
+### From source
+
+```bash
+git clone https://github.com/jameseperry/jira-mcp.git
 cd jira-mcp
-```
-
-2. Install dependencies:
-```bash
-npm install
-```
-
-3. Build the TypeScript code:
-```bash
-npm run build
+pip install -e .
 ```
 
 ## Configuration
 
 ### Environment Variables
 
-Create a `.env` file (or set environment variables) with your Jira credentials:
-
 ```bash
-# Your Jira Cloud base URL (e.g. https://mycompany.atlassian.net)
 JIRA_BASE_URL=https://yourcompany.atlassian.net
-
-# Email associated with your Atlassian account
 JIRA_EMAIL=your.email@company.com
-
-# API token from https://id.atlassian.com/manage-profile/security/api-tokens
 JIRA_API_TOKEN=your_api_token_here
 ```
 
+Get an API token from [Atlassian API Tokens](https://id.atlassian.com/manage-profile/security/api-tokens).
+
 ### Multiple Jira Instances
 
-If you work across multiple Atlassian Cloud sites, add extra instances with `JIRA_BASE_URL_<name>`:
+Add extra instances with `JIRA_BASE_URL_<name>`:
 
 ```bash
 JIRA_BASE_URL=https://primary.atlassian.net
@@ -89,80 +60,19 @@ JIRA_EMAIL=your.email@company.com
 JIRA_API_TOKEN=your_api_token_here
 ```
 
-Then pass `instance: "other"` to any tool to target that site. Omitting `instance` uses the default (`JIRA_BASE_URL`). All instances share the same email and API token.
+Then pass `instance: "other"` to any tool to target that site. All instances share the same credentials.
 
-### Getting Your API Token
+## Usage with Claude Code
 
-1. Go to [https://id.atlassian.com/manage-profile/security/api-tokens](https://id.atlassian.com/manage-profile/security/api-tokens)
-2. Click "Create API token"
-3. Give it a descriptive name (e.g., "MCP Server")
-4. Copy the token and save it securely
-
-## Usage
-
-### General MCP Usage
-
-The server communicates via stdio and can be used with any MCP-compatible client. To start the server manually:
-
-```bash
-node dist/index.js
-```
-
-The server requires the environment variables to be set before running.
-
-### Testing
-
-A smoke test script is included to verify your setup:
-
-```bash
-# Build first
-npm run build
-
-# Run the smoke test
-JIRA_BASE_URL=https://yourcompany.atlassian.net \
-JIRA_EMAIL=your.email@company.com \
-JIRA_API_TOKEN=your_token \
-node test-smoke.mjs
-```
-
-This will list available tools and run read-only operations against your Jira instance. Nothing is created or modified.
-
-## Using with Claude Code
-
-Claude Code is Anthropic's official CLI tool that supports MCP servers. Here's how to connect this Jira MCP:
-
-### Setup for Claude Code
-
-1. **Build the JIRA MCP server** (if not already done):
-```bash
-cd /path/to/jira-mcp
-npm install
-npm run build
-```
-
-2. **Configure Claude Code** to use the JIRA MCP server. Edit your Claude Code MCP configuration file:
-
-**On macOS/Linux:**
-```bash
-~/.config/claude-code/mcp_config.json
-```
-
-**On Windows:**
-```
-%APPDATA%\claude-code\mcp_config.json
-```
-
-3. **Add the JIRA MCP server** to your configuration:
+Add to your Claude Code MCP settings (`~/.claude/settings.json` or project `.claude/settings.json`):
 
 ```json
 {
   "mcpServers": {
     "jira": {
-      "command": "node",
-      "args": ["/absolute/path/to/jira-mcp/dist/index.js"],
+      "command": "jira-mcp",
       "env": {
         "JIRA_BASE_URL": "https://yourcompany.atlassian.net",
-        "JIRA_BASE_URL_other": "https://other.atlassian.net",
         "JIRA_EMAIL": "your.email@company.com",
         "JIRA_API_TOKEN": "your_api_token_here"
       }
@@ -171,139 +81,63 @@ npm run build
 }
 ```
 
-**Important:** Replace `/absolute/path/to/jira-mcp` with the actual absolute path to where you cloned this repository.
+If installed with pipx, use the full path:
 
-4. **Restart Claude Code** or reload the configuration.
-
-### Example Prompts for Claude Code
-
-Once configured, you can use natural language to interact with Jira:
-
-**Search for issues:**
-```
-Show me all high-priority bugs in project MYAPP that are in progress
+```json
+{
+  "command": "pipx",
+  "args": ["run", "jira-mcp"]
+}
 ```
 
-**Create an issue:**
-```
-Create a new bug in project MYAPP titled "Login button not working" with high priority
-```
+Or point directly to the pipx-installed binary:
 
-**Get issue details:**
-```
-Show me the details of MYAPP-123
+```json
+{
+  "command": "/home/you/.local/bin/jira-mcp"
+}
 ```
 
-**Update an issue:**
-```
-Update MYAPP-123 to set the priority to High and add the label "urgent"
-```
+## Tools
 
-**Manage workflow:**
-```
-What transitions are available for MYAPP-123?
-Move MYAPP-123 to In Progress with a comment saying "Starting work on this"
-```
+All tools accept an optional `instance` parameter for multi-instance support.
 
-**Sprint management:**
-```
-Show me all sprints for the MYAPP project
-What issues are in the current sprint?
-Move MYAPP-123 and MYAPP-124 to sprint 42
-```
+| Tool | Description |
+|------|-------------|
+| `jira_list_projects` | List accessible projects |
+| `jira_search` | Search issues using JQL |
+| `jira_get_issue` | Get detailed issue information |
+| `jira_create_issue` | Create a new issue |
+| `jira_update_issue` | Update an existing issue |
+| `jira_assign_issue` | Assign or unassign an issue |
+| `jira_add_comment` | Add a comment to an issue |
+| `jira_get_transitions` | Get available status transitions |
+| `jira_transition_issue` | Transition an issue to a new status |
+| `jira_list_boards` | List agile boards |
+| `jira_list_sprints` | List sprints for a board |
+| `jira_create_sprint` | Create a new sprint |
+| `jira_get_sprint_issues` | Get issues in a sprint |
+| `jira_move_issues_to_sprint` | Move issues to a sprint |
+| `jira_get_link_types` | Get available issue link types |
+| `jira_link_issues` | Link two issues together |
 
-**Link issues:**
-```
-Link MYAPP-123 as blocking MYAPP-124
-```
-
-**Cross-instance queries:**
-```
-Search for my open issues on the "other" Jira instance
-```
-
-Claude Code will automatically use the appropriate JIRA MCP tools to fulfill these requests.
-
-## Available MCP Tools
-
-All tools accept an optional `instance` parameter to target a non-default Jira instance.
-
-### Projects
-- `jira_list_projects` - List all accessible projects
-
-### Search
-- `jira_search` - Search issues using JQL
-
-### Issues
-- `jira_get_issue` - Get detailed issue information
-- `jira_create_issue` - Create a new issue
-- `jira_update_issue` - Update an existing issue
-- `jira_assign_issue` - Assign/unassign an issue
-
-### Comments
-- `jira_add_comment` - Add a comment to an issue
-
-### Transitions
-- `jira_get_transitions` - Get available status transitions
-- `jira_transition_issue` - Move an issue through workflow
-
-### Sprints & Boards
-- `jira_list_boards` - List agile boards
-- `jira_list_sprints` - List sprints for a board
-- `jira_create_sprint` - Create a new sprint
-- `jira_get_sprint_issues` - Get issues in a sprint
-- `jira_move_issues_to_sprint` - Move issues to a sprint
-
-### Links
-- `jira_get_link_types` - Get available link types
-- `jira_link_issues` - Link two issues together
-
-## Development
-
-### Project Structure
+## Project Structure
 
 ```
 jira-mcp/
-├── src/
-│   ├── index.ts              # Main server entry point
-│   ├── jira-client.ts        # Jira API client wrapper
-│   ├── formatters.ts         # ADF ↔ text conversion utilities
-│   └── tools/
-│       ├── projects.ts       # Project listing tools
-│       ├── search.ts         # JQL search tools
-│       ├── issues.ts         # Issue CRUD operations
-│       ├── comments.ts       # Comment management
-│       ├── transitions.ts    # Workflow transitions
-│       ├── sprints.ts        # Sprint and board tools
-│       └── links.ts          # Issue linking tools
-├── package.json
-├── tsconfig.json
-└── test-smoke.mjs           # Smoke test script
+├── pyproject.toml
+└── jira_mcp/
+    ├── __init__.py
+    ├── server.py          # FastMCP tool definitions
+    ├── jira_client.py     # Jira API client (REST v3 + Agile v1.0)
+    └── formatters.py      # ADF conversion, structured issue extraction
 ```
 
-### Building
+## Requirements
 
-```bash
-npm run build      # Compile TypeScript
-npm run dev        # Watch mode for development
-```
+- Python 3.10+
+- Jira Cloud (not self-hosted Jira Server/Data Center)
 
-### Technologies Used
+## License
 
-- **[@modelcontextprotocol/sdk](https://github.com/modelcontextprotocol/sdk)** - MCP SDK for tool registration and stdio communication
-- **[Zod](https://zod.dev/)** - Schema validation for tool parameters
-- **TypeScript** - Type-safe development
-- **Jira REST API v3** - Issue and project management
-- **Jira Agile REST API v1.0** - Sprint and board management
-
-## API Authentication
-
-This server uses HTTP Basic Authentication with your Jira email and API token. The credentials are base64-encoded and sent in the `Authorization` header for each request.
-
-**Security note:** Keep your API token secure. Never commit it to version control. Use environment variables or secure secret management.
-
-## Limitations
-
-- Requires **Jira Cloud** (Atlassian-hosted). Self-hosted Jira Server/Data Center use different APIs.
-- Currently supports the most common operations. Advanced features (custom fields, advanced workflows, etc.) may require additional tool implementations.
-- Text descriptions and comments are converted to/from Atlassian Document Format (ADF). Complex formatting may not be fully preserved.
+MIT
